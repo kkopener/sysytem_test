@@ -516,109 +516,108 @@ stateDiagram-v2
 
 ## 開発環境
 
-本システムは以下の環境で開発を行う．
+本システムは以下の環境で開発および動作確認を行っている．
+
+### OS
+* Windows 10 / Windows 11
 
 ### 使用言語
-
-* Python 3.12
+* Python 3.12以上
 
 ### 使用フレームワーク
-
 * Streamlit
 
 ### 使用ライブラリ
-
-* Pandas
-* NumPy（必要に応じて）
-* Datetime
+* streamlit
+* pandas
+* numpy
+* openpyxl
+* その他 `requirements.txt` に記載されたライブラリ
 
 ### 開発ツール
-
-* Anaconda
 * Visual Studio Code
 * GitHub
+* GitHub Desktop
 
 ---
 
 ## 開発環境構築
 
-Anaconda上で本プロジェクト用の環境を作成し，必要なライブラリをインストールした．
+本プロジェクトは，Windows標準のPython環境と付属のバッチファイルを用いて，容易に環境構築が可能な構成となっている．
+Anaconda環境は不要である．
 
-今回は開発効率を優先し，Anaconda環境内へ必要なライブラリをまとめて導入する構成とした．
+### 1. 事前準備：Pythonのインストール
+本システムを動作させるためには，PCにPythonがインストールされており，コマンドプロンプトから呼び出せる状態（PATHが通っている状態）である必要がある．
+Pythonが未インストールの場合は，以下の手順で導入する．
 
-環境構築後，Visual Studio Codeからプロジェクトフォルダを開き，開発を行う．
+1. [Python公式サイト](https://www.python.org/downloads/)にアクセスし，Windows用のインストーラ（Python 3.11 または 3.12 推奨）をダウンロードする．
+2. ダウンロードしたインストーラ（`.exe`ファイル）を起動する．
+3. **【最重要】** 最初のインストール画面の下部にある **「Add python.exe to PATH」** （または「Add Python 3.x to PATH」）のチェックボックスに**必ずチェックを入れる**．
+   ※このチェックを忘れると，後述の自動セットアップが失敗するため注意すること．
+4. 「Install Now」をクリックし，インストールを完了させる．
+
+### 2. 環境セットアップ
+Pythonの準備が完了したら，以下の手順でプロジェクトの環境を構築する．
+
+1. 本リポジトリをダウンロード，またはGitHub Desktop等を用いてCloneする．
+2. プロジェクトフォルダ（`sysytem_test`）内にある `setup.bat` をダブルクリックして実行する．
+
+`setup.bat` を実行すると，以下の処理が自動で行われる．
+* Pythonインストール状況およびPATHの確認
+* プロジェクト専用の仮想環境（`.venv`）の作成
+* `pip` の最新化
+* `requirements.txt` に定義された必要ライブラリ（Streamlit, Pandas等）の自動インストール
 
 ---
 
 ## 起動方法
 
-### ライブラリのインストール
+環境構築完了後，以下の手順でアプリケーションを起動する．
 
-VScode上のコマンドシェルにて以下のコマンドを入力した
-
-```bash
-pip install streamlit pandas
-pip install supabase
-```
-
-
-### アプリケーション起動
-
-コマンドプロンプトを起動し，以下のコマンドを入力してアプリを起動した
-
-```bash
-streamlit run C:\　Users\　ユーザ名\　OneDrive\　ファイル保存フォルダ\　autoshift.py [ARGUMENTS]
-```
-
-### 動作確認
-
-以下のテストプログラムを作成し，ブラウザ上で画面表示されることを確認した．
-
-```python
-import streamlit as st
-
-st.title("シフト自動調整管理アプリ")
-st.write("開発環境の動作確認")
-```
-
-実行後，ブラウザ上にタイトルおよびメッセージが表示されることを確認した．
+1. 初回のみ，前述の通り `setup.bat` を実行し環境を構築する．
+2. プロジェクトフォルダ内にある `run.bat` をダブルクリックして実行する．
+3. 自動的に仮想環境が有効化され，Streamlitサーバーが起動する．その後，既定のWebブラウザが自動的に開き，アプリケーションの画面が表示される．
 
 ---
+
+## 動作確認
+
+`run.bat` 実行後，Webブラウザ上で本アプリのログイン画面（または新規店舗設立画面）が表示されれば，正常にセットアップおよび起動が完了している．
 
 ## GitHubリポジトリ
 ```text
 プロジェクト構成は以下を基本とする。
 
-sysytem_test/
-│ app.py
-│ config.py
+sysytem_test/source/
+├── app.py                 # アプリケーションのメインエントリーポイント
+├── config.py              # アプリ共通設定（ページタイトル等）
+├── requirements.txt       # 依存ライブラリ定義ファイル
+├── setup.bat              # 自動環境構築用バッチファイル
+├── run.bat                # アプリ起動用バッチファイル
 │
-├─views/
-│    auth_view.py
-│    admin_view.py
-│    employee_view.py
+├── views/                 # UI・画面表示用モジュール
+│   ├── auth_view.py       # ログイン・新規店舗設立画面
+│   ├── admin_view.py      # 管理者用ダッシュボード（シフト生成・編集）
+│   └── employee_view.py   # 従業員用ダッシュボード（シフト閲覧・希望休提出）
 │
-├─database/
-│    storage.py
+├── database/              # データベース・ファイル操作用モジュール
+│   └── storage.py         # CSVファイルの安全な読み書きロジック
 │
-├─services/
-│    shift_generator.py
-│    csv_manager.py
+├── services/              # ビジネスロジック処理用モジュール
+│   ├── shift_generator.py # シフト自動生成・充足度チェックエンジン
+│   └── csv_manager.py     # 各種マスタ・設定・希望休・シフトの管理
 │
-├─models/
-│    employee.py
-│    shift.py
-│    shop.py
+├── models/                # データ構造定義モジュール
+│   ├── employee.py        # 従業員データモデル
+│   ├── shift.py           # シフトデータモデル
+│   └── shop.py            # 店舗データモデル
 │
-├─utils/
-│    validator.py
-│    helper.py
+├── utils/                 # 汎用ユーティリティ・ヘルパー
+│   ├── validator.py       # 入力値やデータのバリデーション処理
+│   └── helper.py          # その他共通関数
 │
-└─data/
+└── data/                  # 各種CSVデータの保存先ディレクトリ
 
 ```
 
-現段階ではプロジェクト初期段階であり、
-システム本体およびCSVデータは今後実装予定である。
-現在は開発環境構築および要件定義・設計の段階である。
 
