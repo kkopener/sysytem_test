@@ -1,0 +1,12 @@
+# 仮想環境
+.venv/
+venv/
+env/
+
+# Pythonのキャッシュ
+__pycache__/
+*.pyc
+*.pyo
+
+# ローカルのテストデータ保存フォルダ（必要に応じて）
+data/
