@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import os
+import time
 from datetime import date
 import calendar
 from services import csv_manager
@@ -65,8 +67,12 @@ def employee_dashboard(base_dir):
                 if not sel_dates: st.warning("日付を選択してください。")
                 else:
                     success, msg = csv_manager.save_holiday_request_to_file(base_dir, shop_code, emp_id, st.session_state['name'], sel_dates, memo)
-                    if success: st.success(msg); time.sleep(0.5); st.rerun()
-                    else: st.error(msg)
+                    if success: 
+                        st.success(msg)
+                        time.sleep(0.5)
+                        st.rerun()
+                    else: 
+                        st.error(msg)
 
         st.markdown("### 📋 あなたが提出済みの希望休一覧")
         if not df_my_req.empty:
@@ -76,7 +82,11 @@ def employee_dashboard(base_dir):
                 cancel_target_date = st.selectbox("取り消したい日付を選択", options=df_my_req_sorted["日付"].values)
                 if st.button("選択した希望を取り消す"):
                     success, msg = csv_manager.delete_holiday_request_from_file(base_dir, shop_code, emp_id, cancel_target_date)
-                    if success: st.success(msg); time.sleep(0.5); st.rerun()
-                    else: st.error(msg)
+                    if success: 
+                        st.success(msg)
+                        time.sleep(0.5)
+                        st.rerun()
+                    else: 
+                        st.error(msg)
         else:
             st.info("提出済みの希望休はありません。")
