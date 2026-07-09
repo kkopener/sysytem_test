@@ -1,26 +1,21 @@
 @echo off
-chcp 65001 >nul
+rem 文字コードをWindows標準(Shift-JIS)に強制設定して文字化けを完全に防ぐ
+chcp 932 > nul
 
-cd /d "%~dp0"
+echo ==================================================
+echo シフト自動調整管理アプリを起動しています...
+echo ==================================================
 
-echo.
-echo ==============================================
-echo シフト自動調整管理アプリを起動します
-echo ==============================================
-echo.
+rem 仮想環境の存在チェック
+if not exist .venv goto NO_VENV
 
-if not exist ".venv\Scripts\python.exe" goto NOVENV
-
-call ".venv\Scripts\activate.bat"
-
-python -m streamlit run app.py
-
-pause
+rem 仮想環境を有効化してアプリを起動
+call .venv\Scripts\activate
+streamlit run app.py
 exit /b
 
-:NOVENV
-echo.
-echo [ERROR] 仮想環境(.venv)がありません。
-echo setup.bat を最初に実行してください。
-echo.
+:NO_VENV
+echo [ERROR] 仮想環境 (.venv) が見つかりません。
+echo 最初に setup.bat を実行して環境構築を完了させてください。
 pause
+exit /b
