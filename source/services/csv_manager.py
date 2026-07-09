@@ -92,3 +92,8 @@ def save_roster_directly(base_dir, shop_code, target_month, df_roster):
     else:
         success, msg = storage.delete_file_safe(roster_file)
         return success, msg if not success else "空のシフトファイルを削除しました。"
+
+def save_employees_directly(base_dir, shop_code, df_emp):
+    emp_file = os.path.join(base_dir, str(shop_code).zfill(3), "employees.csv")
+    success, msg = storage.write_csv_safe(emp_file, df_emp)
+    return success, msg if not success else "従業員データを保存しました。"

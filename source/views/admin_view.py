@@ -52,29 +52,68 @@ def admin_dashboard(base_dir):
                 new_name = st.text_input("氏名")
                 new_role = st.selectbox("役割", options=["staff", "admin"])
                 
-                normal_days = st.text_input("通常出勤曜日 (カンマ区切り)", value="月,火,水,木,金")
+                days_list = ["月", "火", "水", "木", "金", "土", "日"]
+                
+                st.write("通常出勤曜日")
+                cols_n = st.columns(7)
+                n_days_checked = [day for i, day in enumerate(days_list) if cols_n[i].checkbox(day, key=f"n_{day}", value=(day in ["月", "火", "水", "木", "金"]))]
+                
                 t_start = st.text_input("通常開始時刻", value="09:00")
                 t_end = st.text_input("通常終了時刻", value="18:00")
                 
-                extra_days = st.text_input("追加可能曜日", value="")
+                st.write("追加可能曜日")
+                cols_e = st.columns(7)
+                e_days_checked = [day for i, day in enumerate(days_list) if cols_e[i].checkbox(day, key=f"e_{day}")]
+                
                 e_start = st.text_input("追加可能開始時刻", value="")
                 e_end = st.text_input("追加可能終了時刻", value="")
                 
-                ng_days = st.text_input("絶対NG曜日", value="")
+                st.write("絶対NG曜日")
+                cols_ng = st.columns(7)
+                ng_days_checked = [day for i, day in enumerate(days_list) if cols_ng[i].checkbox(day, key=f"ng_{day}")]
+                
                 max_d = st.text_input("週最大出勤日数", value="5")
                 allow_ov = st.selectbox("週制限超過許可", options=["0", "1"])
                 exp_flg = st.selectbox("経験者フラグ", options=["0", "1"])
                 min_flg = st.selectbox("未成年フラグ", options=["0", "1"])
                 
                 if st.form_submit_button("追加する"):
-                    n_set = set([x.strip() for x in normal_days.split(",") if x.strip()])
-                    ng_set = set([x.strip() for x in ng_days.split(",") if x.strip()])
-                    if n_set & ng_set:
+                    normal_days = ",".join(n_days_checked)
+                    extra_days = ",".join(e_days_checked)
+                    ng_days = ",".join(ng_days_checked)
+
+                    n_list = [x.strip() for x in normal_days.split(",") if x.strip()]
+                    e_list = [x.strip() for x in extra_days.split(",") if x.strip()]
+                    ng_list = [x.strip() for x in ng_days.split(",") if x.strip()]
+                    
+                    n_set = set(n_list)
+                    e_set = set(e_list)
+                    ng_set = set(ng_list)
+
+                    if not new_id.strip() or not new_pass.strip() or not new_name.strip():
+                        st.error("⚠️ 従業員ID、パスワード、氏名は必須項目です。")
+                    elif (n_list and (not t_start.strip() or not t_end.strip())) or ((t_start.strip() or t_end.strip()) and not n_list):
+                        st.error("⚠️ 通常出勤曜日を設定する場合は通常開始・終了時刻も入力してください。また、時刻を入力する場合は曜日も設定してください。")
+                    elif t_start.strip() and t_end.strip() and t_start.strip() >= t_end.strip():
+                        st.error("⚠️ 通常開始時刻は通常終了時刻より前の時間を指定してください。")
+                    elif (e_list and (not e_start.strip() or not e_end.strip())) or ((e_start.strip() or e_end.strip()) and not e_list):
+                        st.error("⚠️ 追加可能曜日を設定する場合は追加可能開始・終了時刻も入力してください。また、時刻を入力する場合は曜日も設定してください。")
+                    elif e_start.strip() and e_end.strip() and e_start.strip() >= e_end.strip():
+                        st.error("⚠️ 追加可能開始時刻は追加可能終了時刻より前の時間を指定してください。")
+                    elif len(n_list) != len(n_set):
+                        st.error("⚠️ 通常出勤曜日に同じ曜日が複数回登録されています。")
+                    elif len(e_list) != len(e_set):
+                        st.error("⚠️ 追加可能曜日に同じ曜日が複数回登録されています。")
+                    elif len(ng_list) != len(ng_set):
+                        st.error("⚠️ 絶対NG曜日に同じ曜日が複数回登録されています。")
+                    elif n_set & e_set:
+                        st.error("⚠️ 通常出勤曜日と追加可能曜日に同じ曜日が設定されています。")
+                    elif n_set & ng_set:
                         st.error("⚠️ 通常出勤曜日と絶対NG曜日に同じ曜日が設定されています。")
-                    elif not new_id.strip() or not new_name.strip():
-                        st.error("⚠️ IDと氏名は必須項目です。")
-                    elif not t_start.strip() or not t_end.strip():
-                        st.error("⚠️ 通常開始時刻と通常終了時刻を入力してください。")
+                    elif e_set & ng_set:
+                        st.error("⚠️ 追加可能曜日と絶対NG曜日に同じ曜日が設定されています。")
+                    elif str(max_d).isdigit() and len(n_set) > int(max_d):
+                        st.error("⚠️ 通常出勤曜日の日数が、週最大出勤日数を超えています。")
                     elif df_emp is not None and new_id.strip() in df_emp["従業員ID"].astype(str).values:
                         st.error("⚠️ 既に存在する従業員IDです。")
                     else:
@@ -94,6 +133,113 @@ def admin_dashboard(base_dir):
                         time.sleep(0.5)
                         st.rerun()
                         
+        with st.expander("✏️ 従業員情報を編集する"):
+            if df_emp is not None and not df_emp.empty:
+                edit_id = st.selectbox("編集する従業員を選択", options=df_emp["従業員ID"].values, key="edit_select")
+                target_emp = df_emp[df_emp["従業員ID"] == edit_id].iloc[0]
+                
+                with st.form("edit_emp_form"):
+                    edit_pass = st.text_input("パスワード", value=str(target_emp.get("パスワード", "")), type="password")
+                    edit_name = st.text_input("氏名", value=str(target_emp.get("氏名", "")))
+                    
+                    roles = ["staff", "admin"]
+                    current_role = str(target_emp.get("役割", "staff"))
+                    edit_role = st.selectbox("役割", options=roles, index=roles.index(current_role) if current_role in roles else 0)
+                    
+                    days_list = ["月", "火", "水", "木", "金", "土", "日"]
+                    
+                    st.write("通常出勤曜日")
+                    cols_n_e = st.columns(7)
+                    curr_n_list = str(target_emp.get("通常出勤曜日", "")).split(",")
+                    n_days_checked_e = [day for i, day in enumerate(days_list) if cols_n_e[i].checkbox(day, key=f"e_n_{day}", value=(day in curr_n_list))]
+                    
+                    edit_t_start = st.text_input("通常開始時刻", value=str(target_emp.get("通常開始時刻", "")))
+                    edit_t_end = st.text_input("通常終了時刻", value=str(target_emp.get("通常終了時刻", "")))
+                    
+                    st.write("追加可能曜日")
+                    cols_e_e = st.columns(7)
+                    curr_e_list = str(target_emp.get("追加可能曜日", "")).split(",")
+                    e_days_checked_e = [day for i, day in enumerate(days_list) if cols_e_e[i].checkbox(day, key=f"e_e_{day}", value=(day in curr_e_list))]
+                    
+                    edit_e_start = st.text_input("追加可能開始時刻", value=str(target_emp.get("追加可能開始時刻", "")))
+                    edit_e_end = st.text_input("追加可能終了時刻", value=str(target_emp.get("追加可能終了時刻", "")))
+                    
+                    st.write("絶対NG曜日")
+                    cols_ng_e = st.columns(7)
+                    curr_ng_list = str(target_emp.get("絶対NG曜日", "")).split(",")
+                    ng_days_checked_e = [day for i, day in enumerate(days_list) if cols_ng_e[i].checkbox(day, key=f"e_ng_{day}", value=(day in curr_ng_list))]
+                    
+                    edit_max_d = st.text_input("週最大出勤日数", value=str(target_emp.get("週最大出勤日数", "5")))
+                    
+                    ov_opts = ["0", "1"]
+                    curr_ov = str(target_emp.get("週制限超過許可", "0"))
+                    edit_allow_ov = st.selectbox("週制限超過許可", options=ov_opts, index=ov_opts.index(curr_ov) if curr_ov in ov_opts else 0, key="e_ov")
+                    
+                    curr_exp = str(target_emp.get("経験者フラグ", "0"))
+                    edit_exp_flg = st.selectbox("経験者フラグ", options=ov_opts, index=ov_opts.index(curr_exp) if curr_exp in ov_opts else 0, key="e_exp")
+                    
+                    curr_min = str(target_emp.get("未成年フラグ", "0"))
+                    edit_min_flg = st.selectbox("未成年フラグ", options=ov_opts, index=ov_opts.index(curr_min) if curr_min in ov_opts else 0, key="e_min")
+                    
+                    if st.form_submit_button("更新する"):
+                        normal_days_e = ",".join(n_days_checked_e)
+                        extra_days_e = ",".join(e_days_checked_e)
+                        ng_days_e = ",".join(ng_days_checked_e)
+                        
+                        n_list_e = [x.strip() for x in normal_days_e.split(",") if x.strip()]
+                        e_list_e = [x.strip() for x in extra_days_e.split(",") if x.strip()]
+                        ng_list_e = [x.strip() for x in ng_days_e.split(",") if x.strip()]
+                        
+                        n_set_e = set(n_list_e)
+                        e_set_e = set(e_list_e)
+                        ng_set_e = set(ng_list_e)
+
+                        if not edit_pass.strip() or not edit_name.strip():
+                            st.error("⚠️ パスワード、氏名は必須項目です。")
+                        elif (n_list_e and (not edit_t_start.strip() or not edit_t_end.strip())) or ((edit_t_start.strip() or edit_t_end.strip()) and not n_list_e):
+                            st.error("⚠️ 通常出勤曜日を設定する場合は通常開始・終了時刻も入力してください。また、時刻を入力する場合は曜日も設定してください。")
+                        elif edit_t_start.strip() and edit_t_end.strip() and edit_t_start.strip() >= edit_t_end.strip():
+                            st.error("⚠️ 通常開始時刻は通常終了時刻より前の時間を指定してください。")
+                        elif (e_list_e and (not edit_e_start.strip() or not edit_e_end.strip())) or ((edit_e_start.strip() or edit_e_end.strip()) and not e_list_e):
+                            st.error("⚠️ 追加可能曜日を設定する場合は追加可能開始・終了時刻も入力してください。また、時刻を入力する場合は曜日も設定してください。")
+                        elif edit_e_start.strip() and edit_e_end.strip() and edit_e_start.strip() >= edit_e_end.strip():
+                            st.error("⚠️ 追加可能開始時刻は追加可能終了時刻より前の時間を指定してください。")
+                        elif n_set_e & e_set_e:
+                            st.error("⚠️ 通常出勤曜日と追加可能曜日に同じ曜日が設定されています。")
+                        elif n_set_e & ng_set_e:
+                            st.error("⚠️ 通常出勤曜日と絶対NG曜日に同じ曜日が設定されています。")
+                        elif e_set_e & ng_set_e:
+                            st.error("⚠️ 追加可能曜日と絶対NG曜日に同じ曜日が設定されています。")
+                        elif str(edit_max_d).isdigit() and len(n_set_e) > int(edit_max_d):
+                            st.error("⚠️ 通常出勤曜日の日数が、週最大出勤日数を超えています。")
+                        else:
+                            if current_role == "admin" and edit_role == "staff":
+                                admins = df_emp[df_emp["役割"] == "admin"]
+                                if len(admins) <= 1:
+                                    st.error("⚠️ 管理者がいなくなるため、この管理者の役割をstaffに変更できません。")
+                                    st.stop()
+                                    
+                            idx = df_emp.index[df_emp["従業員ID"] == edit_id][0]
+                            df_emp.at[idx, "パスワード"] = edit_pass.strip()
+                            df_emp.at[idx, "氏名"] = edit_name.strip()
+                            df_emp.at[idx, "役割"] = edit_role
+                            df_emp.at[idx, "通常出勤曜日"] = normal_days_e
+                            df_emp.at[idx, "通常開始時刻"] = edit_t_start.strip()
+                            df_emp.at[idx, "通常終了時刻"] = edit_t_end.strip()
+                            df_emp.at[idx, "追加可能曜日"] = extra_days_e
+                            df_emp.at[idx, "追加可能開始時刻"] = edit_e_start.strip()
+                            df_emp.at[idx, "追加可能終了時刻"] = edit_e_end.strip()
+                            df_emp.at[idx, "絶対NG曜日"] = ng_days_e
+                            df_emp.at[idx, "週最大出勤日数"] = edit_max_d
+                            df_emp.at[idx, "週制限超過許可"] = edit_allow_ov
+                            df_emp.at[idx, "経験者フラグ"] = edit_exp_flg
+                            df_emp.at[idx, "未成年フラグ"] = edit_min_flg
+                            
+                            csv_manager.save_employees_directly(base_dir, shop_code, df_emp)
+                            st.success("従業員情報を更新しました。")
+                            time.sleep(0.5)
+                            st.rerun()
+
         with st.expander("❌ 従業員の契約解除(削除)"):
             if df_emp is not None and not df_emp.empty:
                 del_id = st.selectbox("削除する従業員を選択", options=df_emp["従業員ID"].values)
@@ -113,6 +259,27 @@ def admin_dashboard(base_dir):
 
     with tab_roster:
         st.subheader(f"✨ {target_month} のシフト管理")
+        
+        with st.expander("📝 従業員の希望休提出状況を確認する", expanded=False):
+            try:
+                # ▼ 修正ポイント: ファイルパスを店舗フォルダ直下の holiday_requests.csv に変更
+                req_file = os.path.join(base_dir, str(shop_code).zfill(3), "holiday_requests.csv")
+                
+                if os.path.exists(req_file):
+                    df_req = pd.read_csv(req_file, encoding="utf-8-sig")
+                    # 対象月のデータ（例: "2026-07" から始まる日付）のみに絞り込む
+                    df_req_target = df_req[df_req["日付"].astype(str).str.startswith(target_month)]
+                    
+                    if not df_req_target.empty:
+                        # 日付順に並び替えて綺麗に表示
+                        st.dataframe(df_req_target.sort_values("日付"), use_container_width=True, hide_index=True)
+                    else:
+                        st.info(f"{target_month} の希望休はまだ提出されていません。")
+                else:
+                    st.info("希望休データがまだありません。")
+            except Exception as e:
+                st.warning(f"希望休データの読み込みに失敗しました: {e}")
+        
         if st.button("🔄 シフトを自動生成する"):
             success, msg = shift_generator.generate_monthly_shift(base_dir, shop_code, target_month)
             if success: st.success(msg); time.sleep(0.5); st.rerun()
