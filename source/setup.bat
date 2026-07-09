@@ -1,52 +1,37 @@
 @echo off
-rem 文字コードをWindows標準のShift-JISに明示的に設定
-chcp 932 > nul
+echo === SETUP START ===
 
-echo ====================================================
-echo シフト自動調整管理アプリ - 環境構築セットアップ
-echo ====================================================
-
-rem パソコン内にPythonがあるかチェック
 python --version > nul 2>&1
-if errorlevel 1 goto NO_PYTHON
+if errorlevel 1 goto NO_PY
 
-rem フォルダが存在するかチェック
-if exist .venv goto VENV_EXISTS
-echo 仮想環境 venv を作成しています...
+if exist .venv goto SKIP_VENV
+echo Creating .venv...
 python -m venv .venv
-if errorlevel 1 goto VENV_ERROR
-goto VENV_DONE
+if errorlevel 1 goto NO_VENV
 
-:VENV_EXISTS
-echo 仮想環境 venv は既に存在します。
-
-:VENV_DONE
-rem ライブラリのインストール
-echo pipの更新とライブラリのインストールを開始します...
+:SKIP_VENV
+echo Activating and installing...
 call .venv\Scripts\activate.bat
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-if errorlevel 1 goto INSTALL_ERROR
+if errorlevel 1 goto NO_PIP
 
-echo ====================================================
-echo セットアップが正常に完了しました！
-echo この画面を閉じ、run.bat をダブルクリックして起動してください。
-echo ====================================================
+echo === SETUP SUCCESS! ===
+echo Please close this window and run run.bat
 pause
 exit /b
 
-:NO_PYTHON
-echo [ERROR] Pythonがパソコンで見つかりません！
-echo 画面下部にある Add python.exe to PATH にチェックを入れて再インストールしてください。
+:NO_PY
+echo [ERROR] Python not found.
 pause
 exit /b
 
-:VENV_ERROR
-echo [ERROR] 仮想環境 venv の作成に失敗しました。
+:NO_VENV
+echo [ERROR] Failed to create .venv.
 pause
 exit /b
 
-:INSTALL_ERROR
-echo [ERROR] ライブラリのインストールに失敗しました。
+:NO_PIP
+echo [ERROR] Failed to install pip or requirements.
 pause
 exit /b
